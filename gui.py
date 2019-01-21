@@ -6,16 +6,27 @@ from tkinter.filedialog import askopenfilename
 import subprocess
 import tkinter.messagebox
 import os
+import sys
+import time
 
-cwd=os.getcwd()
+def resource_path(relative_path):
+    if getattr(sys, 'frozen', False): #是否Bundle Resource
+        base_path = sys._MEIPASS
+    else:
+        base_path = sys.path[0]
+    return os.path.join(base_path, relative_path)
+
+cwd = resource_path(os.path.join(".","sunxi-fel.exe"))
 
 def cmd(file,addr):
     if(addr.get()!="" and file.get()!=""):
-        str1=cwd+"/sunxi-fel.exe -p spiflash-write "+addr.get()+" "+file.get()
-        print(str1)
+        str1=cwd+" -p spiflash-write "+addr.get()+" "+file.get()
+        var2.set("Flashing ...")
+        time.sleep(1)
         cmd=subprocess.call(str1)
-        if(cmd != 0):
-            tkinter.messagebox.askquestion(title='Complete', message='Flash Done')
+        
+        if(cmd == 0):
+            var2.set("Flash Done")
         else:
             tkinter.messagebox.askquestion(title='ERROR', message='Flash Error')
     else:
@@ -33,7 +44,7 @@ def download():
 
 #检测flash大小
 def checkflash():
-    p=os.popen(cwd+"/sunxi-fel spiflash-info").read()
+    p=os.popen(cwd+" spiflash-info").read()
     try:
         Mbyte=int(p.split(" ")[6])/1024/1024
     except IndexError:
@@ -44,6 +55,7 @@ def checkflash():
     addr2.set("0x0100000")
     addr3.set("0x0110000")
     addr4.set("0x0510000")
+    var2.set("IDLE")
 
 
 root = Tk()
@@ -74,6 +86,7 @@ addr3=StringVar()
 addr4=StringVar()
 
 var1 = StringVar()
+var2 = StringVar()
 
 Entry(root,textvar=path1).grid(row=1,column=2)
 Button(root,text="...",command=lambda:path1.set(askopenfilename())).grid(row=1,column=3)
@@ -95,7 +108,8 @@ Button(root,text="...",command=lambda:path4.set(askopenfilename())).grid(row=4,c
 Label(root,text="@").grid(row=4,column=4)
 Entry(root,textvar=addr4).grid(row=4,column=5)
 
-lb1=Label(root,textvariable=var1).grid(row=5,column=2)
+Label(root,textvariable=var1).grid(row=5,column=2)
+Label(root,textvariable=var2).grid(row=5,column=5)
 Button(root,text="下载",command=download).grid(row=5,column=3)
 
 checkflash()
